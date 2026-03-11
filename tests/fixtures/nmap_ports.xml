@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<nmaprun>
+  <host>
+    <status state="up" />
+    <address addr="192.168.1.10" addrtype="ipv4" />
+    <hostnames>
+      <hostname name="caddy.local" />
+    </hostnames>
+    <ports>
+      <port protocol="tcp" portid="80">
+        <state state="open" />
+        <service name="http" product="Caddy" version="2.8.4" />
+      </port>
+      <port protocol="tcp" portid="443">
+        <state state="open" />
+        <service name="https" product="Caddy" version="2.8.4" />
+      </port>
+    </ports>
+    <os>
+      <osmatch name="Linux 5.x" />
+    </os>
+  </host>
+  <host>
+    <status state="up" />
+    <address addr="192.168.1.30" addrtype="ipv4" />
+    <ports>
+      <port protocol="tcp" portid="5432">
+        <state state="open" />
+        <service name="postgresql" product="PostgreSQL" version="16.0" />
+      </port>
+    </ports>
+  </host>
+</nmaprun>

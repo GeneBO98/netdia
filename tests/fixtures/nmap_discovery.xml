@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<nmaprun>
+  <host>
+    <status state="up" reason="arp-response" />
+    <address addr="192.168.1.10" addrtype="ipv4" />
+    <address addr="AA:BB:CC:DD:EE:FF" addrtype="mac" />
+    <hostnames>
+      <hostname name="caddy.local" />
+    </hostnames>
+  </host>
+  <host>
+    <status state="up" reason="arp-response" />
+    <address addr="192.168.1.20" addrtype="ipv4" />
+  </host>
+</nmaprun>
