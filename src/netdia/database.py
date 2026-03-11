@@ -242,6 +242,11 @@ class Database:
             row = connection.execute("SELECT * FROM scan_targets WHERE id = ?", (target_id,)).fetchone()
         return dict(row)
 
+    def delete_target(self, target_id: int) -> bool:
+        with self.connect() as connection:
+            cursor = connection.execute("DELETE FROM scan_targets WHERE id = ?", (target_id,))
+        return cursor.rowcount > 0
+
     def enabled_cidrs(self) -> list[str]:
         with self.connect() as connection:
             rows = connection.execute(

@@ -296,9 +296,23 @@ input::placeholder {
   background: rgba(255, 255, 255, 0.05);
 }
 
+.target-actions {
+  display: flex;
+  gap: 6px;
+}
+
 .target-item button {
   padding: 6px 14px;
   font-size: 0.78rem;
+}
+
+.target-item .remove-btn {
+  color: var(--red);
+  border-color: rgba(248, 113, 113, 0.2);
+}
+
+.target-item .remove-btn:hover:not(:disabled) {
+  background: var(--red-dim);
 }
 
 /* Workspace */

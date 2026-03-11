@@ -50,6 +50,12 @@ def create_app() -> FastAPI:
     def update_target(target_id: int, payload: dict[str, Any]) -> dict[str, Any]:
         return database.update_target(target_id, bool(payload.get("enabled", True)))
 
+    @app.delete("/api/targets/{target_id}")
+    def delete_target(target_id: int) -> dict[str, str]:
+        if not database.delete_target(target_id):
+            raise HTTPException(status_code=404, detail="target not found")
+        return {"status": "deleted"}
+
     @app.post("/api/scans")
     def start_scan(payload: dict[str, Any] | None = None) -> dict[str, Any]:
         cidrs = None

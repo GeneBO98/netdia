@@ -28,15 +28,22 @@ function renderTargets(targets) {
     item.className = "target-item";
     item.innerHTML = `
       <span>${target.cidr}</span>
-      <button class="secondary" data-id="${target.id}">
-        ${target.enabled ? "Disable" : "Enable"}
-      </button>
+      <div class="target-actions">
+        <button class="secondary toggle-btn" data-id="${target.id}">
+          ${target.enabled ? "Disable" : "Enable"}
+        </button>
+        <button class="secondary remove-btn" data-id="${target.id}">Remove</button>
+      </div>
     `;
-    item.querySelector("button").addEventListener("click", async () => {
+    item.querySelector(".toggle-btn").addEventListener("click", async () => {
       await request(`/api/targets/${target.id}`, {
         method: "PATCH",
         body: JSON.stringify({ enabled: !target.enabled }),
       });
+      await loadTargets();
+    });
+    item.querySelector(".remove-btn").addEventListener("click", async () => {
+      await request(`/api/targets/${target.id}`, { method: "DELETE" });
       await loadTargets();
     });
     list.appendChild(item);
