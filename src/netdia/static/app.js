@@ -657,9 +657,27 @@ async function loadLatestScanActivity() {
   }
 }
 
+function toggleExpand() {
+  const panel = document.querySelector(".graph-panel");
+  const btn = document.getElementById("expand-btn");
+  const expanded = panel.classList.toggle("expanded");
+  btn.innerHTML = expanded
+    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M4 14h6v6m10-10h-6V4m0 6L21 3M3 21l7-7"/></svg>`
+    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>`;
+  btn.title = expanded ? "Collapse topology" : "Expand topology";
+  const diagram = document.getElementById("diagram");
+  if (diagram) drawFlowConnections(diagram);
+}
+
 function registerEvents() {
   document.getElementById("scan-button").addEventListener("click", startScan);
   document.getElementById("cancel-button").addEventListener("click", cancelScan);
+  document.getElementById("expand-btn").addEventListener("click", toggleExpand);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && document.querySelector(".graph-panel.expanded")) {
+      toggleExpand();
+    }
+  });
   document.getElementById("target-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     const input = document.getElementById("target-cidr");

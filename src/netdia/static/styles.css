@@ -473,6 +473,43 @@ input::placeholder {
   font-size: 0.88rem;
 }
 
+/* Expand button */
+.expand-btn {
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+/* Expanded topology overlay */
+.graph-panel.expanded {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  margin: 0;
+  border-radius: 0;
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.graph-panel.expanded .panel-head {
+  flex-shrink: 0;
+  padding: 16px 24px;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.graph-panel.expanded .diagram-area {
+  flex: 1;
+  min-height: 0;
+  border-radius: 0;
+  border: none;
+}
+
 /* Diagram area — flowchart canvas */
 .diagram-area {
   min-height: 500px;
