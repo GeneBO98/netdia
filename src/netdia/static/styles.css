@@ -769,6 +769,15 @@ input::placeholder {
   border-radius: 4px;
 }
 
+.flow-clickable-site {
+  cursor: pointer;
+}
+
+.flow-clickable-site:hover {
+  border-color: var(--accent-2);
+  box-shadow: 0 4px 20px rgba(167, 139, 250, 0.15);
+}
+
 .flow-more-node {
   min-width: 70px;
   max-width: 100px;
@@ -968,6 +977,11 @@ tbody tr:hover {
   gap: 8px;
 }
 
+a.detail-site-row {
+  text-decoration: none;
+  color: inherit;
+}
+
 .detail-site-row {
   display: flex;
   align-items: flex-start;
@@ -976,6 +990,13 @@ tbody tr:hover {
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--line);
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.detail-site-row:hover {
+  border-color: rgba(167, 139, 250, 0.3);
+  background: rgba(167, 139, 250, 0.04);
 }
 
 .detail-favicon {

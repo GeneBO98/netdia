@@ -238,10 +238,20 @@ function makeHostFlowNode(host) {
   return el;
 }
 
+function siteUrl(website) {
+  const scheme = website.scheme || "https";
+  return `${scheme}://${website.hostname}`;
+}
+
 function makeWebsiteFlowNode(website, nodeId) {
   const el = document.createElement("div");
-  el.className = "flow-node flow-site-node";
+  el.className = "flow-node flow-site-node flow-clickable-site";
   el.setAttribute("data-nid", nodeId);
+  el.title = siteUrl(website);
+  el.addEventListener("click", (e) => {
+    e.stopPropagation();
+    window.open(siteUrl(website), "_blank", "noopener");
+  });
   const displayName = website.title || website.hostname;
   el.innerHTML = `
     <div class="flow-node-icon flow-site-icon" style="background:#457b9d">
@@ -502,15 +512,16 @@ function renderDetailCards(detail) {
       const faviconHtml = site.favicon_url
         ? `<img class="detail-favicon" src="${site.favicon_url}" onerror="this.style.display='none'" />`
         : `<div class="detail-favicon-placeholder">${flowIconSvg("globe")}</div>`;
+      const url = `${site.scheme || "https"}://${site.hostname}`;
       return `
-        <div class="detail-site-row">
+        <a class="detail-site-row" href="${url}" target="_blank" rel="noopener" title="${url}">
           ${faviconHtml}
           <div class="detail-site-info">
             <div class="detail-site-name">${site.title || site.hostname}</div>
             <div class="detail-meta">${site.scheme}://${site.hostname} · ${site.source}</div>
             ${tls}${upstream}
           </div>
-        </div>
+        </a>
       `;
     })
     .join("");
