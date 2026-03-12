@@ -67,6 +67,10 @@ def create_app() -> FastAPI:
         scan = database.get_scan(scan_id)
         return {"scan_id": scan_id, "status": scan["status"] if scan else "queued"}
 
+    @app.get("/api/scans/history")
+    def list_scans() -> list[dict[str, Any]]:
+        return database.list_scans()
+
     @app.get("/api/scans/latest")
     def latest_scan_run() -> dict[str, Any]:
         scan = database.latest_scan_run()
@@ -98,6 +102,10 @@ def create_app() -> FastAPI:
     @app.get("/api/topology/latest")
     def topology() -> dict[str, Any]:
         return database.topology()
+
+    @app.get("/api/topology/{scan_id}")
+    def topology_by_scan(scan_id: int) -> dict[str, Any]:
+        return database.topology(scan_id=scan_id)
 
     @app.get("/api/hosts/{host_id}")
     def host_detail(host_id: int) -> dict[str, Any]:

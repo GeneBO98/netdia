@@ -70,12 +70,23 @@
         <section class="panel graph-panel">
           <div class="panel-head">
             <h2>Topology</h2>
-            <p>Subnet -> host -> service -> website</p>
-            <button id="expand-btn" class="secondary expand-btn" title="Expand topology">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
-              </svg>
-            </button>
+            <div class="panel-head-controls">
+              <select id="scan-history-select" title="Browse historical scans">
+                <option value="">Latest scan</option>
+              </select>
+              <button id="export-btn" class="secondary icon-btn" title="Export as PNG">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              </button>
+              <button id="expand-btn" class="secondary icon-btn" title="Expand topology">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                </svg>
+              </button>
+            </div>
           </div>
           <div id="diagram" class="diagram-area"></div>
         </section>

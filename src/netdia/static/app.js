@@ -3,6 +3,7 @@ const state = {
   hosts: new Map(),
   activeScanId: null,
   pollTimer: null,
+  selectedScanId: null,
 };
 
 async function request(path, options = {}) {
@@ -575,8 +576,30 @@ async function renderHostDetail(hostId) {
   renderDetailCards(detail);
 }
 
+async function loadScanHistory() {
+  try {
+    const scans = await request("/api/scans/history");
+    const select = document.getElementById("scan-history-select");
+    const current = select.value;
+    select.innerHTML = `<option value="">Latest scan</option>`;
+    for (const scan of scans) {
+      const date = new Date(scan.started_at || scan.created_at).toLocaleString();
+      const label = `#${scan.id} · ${scan.status} · ${date}`;
+      const opt = document.createElement("option");
+      opt.value = scan.id;
+      opt.textContent = label;
+      select.appendChild(opt);
+    }
+    if (current) select.value = current;
+  } catch {
+    // ignore if endpoint not available
+  }
+}
+
 async function loadTopology() {
-  state.topology = await request("/api/topology/latest");
+  const scanId = state.selectedScanId;
+  const url = scanId ? `/api/topology/${scanId}` : "/api/topology/latest";
+  state.topology = await request(url);
   if (!state.topology.latest_scan) {
     const stage = document.getElementById("scan-stage-pill").textContent.toLowerCase();
     if (!state.activeScanId && stage === "idle") {
@@ -588,11 +611,145 @@ async function loadTopology() {
   }
   const scan = state.topology.latest_scan;
   updateStatus(
-    `Last scan #${scan.id}: ${scan.status} · ${scan.hosts} hosts · ${scan.services} services · ${scan.websites} websites`,
+    `${scanId ? "Scan" : "Last scan"} #${scan.id}: ${scan.status} · ${scan.hosts} hosts · ${scan.services} services · ${scan.websites} websites`,
   );
   setProgress(scan);
   renderGraph();
   renderInventory();
+}
+
+async function exportChart() {
+  const diagram = document.getElementById("diagram");
+  if (!diagram) return;
+
+  const btn = document.getElementById("export-btn");
+  btn.disabled = true;
+
+  try {
+    const rect = diagram.getBoundingClientRect();
+    const canvas = document.createElement("canvas");
+    const scale = 2;
+    canvas.width = diagram.scrollWidth * scale;
+    canvas.height = diagram.scrollHeight * scale;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(scale, scale);
+
+    // Draw background
+    ctx.fillStyle = "#0f1117";
+    ctx.fillRect(0, 0, diagram.scrollWidth, diagram.scrollHeight);
+
+    // Draw grid pattern
+    ctx.strokeStyle = "rgba(255,255,255,0.015)";
+    ctx.lineWidth = 1;
+    for (let x = 0; x < diagram.scrollWidth; x += 48) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, diagram.scrollHeight); ctx.stroke();
+    }
+    for (let y = 0; y < diagram.scrollHeight; y += 48) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(diagram.scrollWidth, y); ctx.stroke();
+    }
+
+    // Draw SVG connections
+    const svgEl = diagram.querySelector(".flow-svg");
+    if (svgEl) {
+      const svgData = new XMLSerializer().serializeToString(svgEl);
+      const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+      const svgUrl = URL.createObjectURL(svgBlob);
+      const svgImg = new Image();
+      await new Promise((resolve, reject) => {
+        svgImg.onload = resolve;
+        svgImg.onerror = reject;
+        svgImg.src = svgUrl;
+      });
+      ctx.drawImage(svgImg, 0, 0);
+      URL.revokeObjectURL(svgUrl);
+    }
+
+    // Draw each flow node
+    const containerRect = diagram.getBoundingClientRect();
+    const nodes = diagram.querySelectorAll(".flow-node, .flow-group-label");
+    for (const node of nodes) {
+      const nr = node.getBoundingClientRect();
+      const x = nr.left - containerRect.left + diagram.scrollLeft;
+      const y = nr.top - containerRect.top + diagram.scrollTop;
+      const w = nr.width;
+      const h = nr.height;
+
+      // Node background
+      const isSubnet = node.classList.contains("flow-subnet-node");
+      const isSite = node.classList.contains("flow-site-node");
+      const isInternet = node.classList.contains("flow-internet");
+      const isLabel = node.classList.contains("flow-group-label");
+
+      if (isLabel) {
+        ctx.fillStyle = "rgba(34, 211, 238, 0.12)";
+        ctx.strokeStyle = "transparent";
+      } else if (isSubnet) {
+        ctx.fillStyle = "rgba(34, 211, 238, 0.12)";
+        ctx.strokeStyle = "rgba(34, 211, 238, 0.15)";
+      } else if (isSite) {
+        ctx.fillStyle = "rgba(69, 123, 157, 0.06)";
+        ctx.strokeStyle = "rgba(69, 123, 157, 0.25)";
+      } else if (isInternet) {
+        ctx.fillStyle = "rgba(107, 114, 128, 0.12)";
+        ctx.strokeStyle = "rgba(107, 114, 128, 0.2)";
+      } else {
+        ctx.fillStyle = "rgba(22, 24, 34, 0.92)";
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.06)";
+      }
+
+      // Rounded rect
+      const r = 12;
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Draw text labels
+      const labelEl = node.querySelector(".flow-node-label");
+      const subEl = node.querySelector(".flow-node-sub");
+
+      if (isLabel) {
+        ctx.fillStyle = "#22d3ee";
+        ctx.font = "bold 10px Inter, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(node.textContent.trim(), x + w / 2, y + h / 2 + 4);
+      } else {
+        if (labelEl) {
+          ctx.fillStyle = "#f0f1f4";
+          ctx.font = "bold 12px Inter, sans-serif";
+          ctx.textAlign = "center";
+          const labelY = subEl ? y + h / 2 - 2 : y + h / 2 + 4;
+          ctx.fillText(labelEl.textContent.trim(), x + w / 2, labelY, w - 20);
+        }
+        if (subEl) {
+          ctx.fillStyle = "#6b7280";
+          ctx.font = "11px monospace";
+          ctx.textAlign = "center";
+          ctx.fillText(subEl.textContent.trim(), x + w / 2, y + h / 2 + 14, w - 20);
+        }
+      }
+    }
+
+    // Download
+    const link = document.createElement("a");
+    const scanLabel = state.selectedScanId || "latest";
+    link.download = `netdia-topology-${scanLabel}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  } catch (err) {
+    console.error("Export failed:", err);
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 async function refreshScan(scanId) {
@@ -621,6 +778,7 @@ async function pollScan(scanId) {
       if (scan.error_summary) {
         updateStatus(`Scan #${scanId} failed: ${scan.error_summary}`);
       }
+      await loadScanHistory();
       await loadTopology();
       state.activeScanId = null;
       return;
@@ -684,6 +842,11 @@ function registerEvents() {
   document.getElementById("scan-button").addEventListener("click", startScan);
   document.getElementById("cancel-button").addEventListener("click", cancelScan);
   document.getElementById("expand-btn").addEventListener("click", toggleExpand);
+  document.getElementById("export-btn").addEventListener("click", exportChart);
+  document.getElementById("scan-history-select").addEventListener("change", async (e) => {
+    state.selectedScanId = e.target.value ? parseInt(e.target.value) : null;
+    await loadTopology();
+  });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && document.querySelector(".graph-panel.expanded")) {
       toggleExpand();
@@ -712,6 +875,7 @@ async function bootstrap() {
   setActionButtons(null);
   registerEvents();
   await loadTargets();
+  await loadScanHistory();
   await loadLatestScanActivity();
   await loadTopology();
 }

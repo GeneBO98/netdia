@@ -367,6 +367,27 @@ class Database:
             payload.append(item)
         return payload
 
+    def list_scans(self, limit: int = 50) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT sr.*,
+                    (SELECT COUNT(*) FROM hosts WHERE last_seen_scan_id = sr.id) AS hosts,
+                    (SELECT COUNT(*) FROM services WHERE scan_run_id = sr.id) AS services,
+                    (SELECT COUNT(*) FROM websites WHERE scan_run_id = sr.id) AS websites
+                FROM scan_runs sr
+                ORDER BY sr.id DESC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+        results = []
+        for row in rows:
+            item = dict(row)
+            item["settings"] = json.loads(item.pop("settings_json"))
+            results.append(item)
+        return results
+
     def latest_scan(self) -> dict[str, Any] | None:
         with self.connect() as connection:
             row = connection.execute(
@@ -615,11 +636,14 @@ class Database:
             payload.append(item)
         return payload
 
-    def topology(self) -> dict[str, Any]:
-        latest = self.latest_scan()
-        if latest is None:
+    def topology(self, scan_id: int | None = None) -> dict[str, Any]:
+        if scan_id is not None:
+            scan = self.get_scan(scan_id)
+        else:
+            scan = self.latest_scan()
+        if scan is None:
             return {"latest_scan": None, "subnets": [], "caddy_sites": [], "inventory": []}
-        scan_id = latest["id"]
+        scan_id = scan["id"]
         with self.connect() as connection:
             hosts = connection.execute(
                 "SELECT * FROM hosts WHERE last_seen_scan_id = ? ORDER BY ip",
@@ -735,7 +759,7 @@ class Database:
         ]
 
         return {
-            "latest_scan": latest,
+            "latest_scan": scan,
             "subnets": subnets,
             "caddy_sites": caddy_sites,
             "inventory": inventory,
