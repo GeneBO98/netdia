@@ -46,6 +46,25 @@ def extract_title(html: str) -> str | None:
     return title or None
 
 
+def extract_favicon(html: str, base_url: str) -> str | None:
+    """Extract favicon URL from HTML link tags."""
+    match = FAVICON_RE.search(html) or FAVICON_RE_ALT.search(html)
+    if not match:
+        return None
+    href = match.group(1)
+    if href.startswith("http://") or href.startswith("https://"):
+        return href
+    parsed = urlparse(base_url)
+    origin = f"{parsed.scheme}://{parsed.hostname}"
+    if parsed.port:
+        origin += f":{parsed.port}"
+    if href.startswith("//"):
+        return f"{parsed.scheme}:{href}"
+    if href.startswith("/"):
+        return f"{origin}{href}"
+    return f"{origin}/{href}"
+
+
 def extract_tls_names_from_cert(cert: dict[str, object]) -> list[str]:
     names: set[str] = set()
     for item in cert.get("subjectAltName", []):
@@ -109,7 +128,9 @@ def probe_http_service(ip: str, port: int, service_name: str | None = None) -> l
 
         final_url = str(response.url)
         final_host = urlparse(final_url).hostname or ip
-        title = extract_title(response.text)
+        html = response.text
+        title = extract_title(html)
+        favicon_url = extract_favicon(html, final_url)
         redirect_target = final_url if final_url != url else None
         server_header = response.headers.get("server")
 
@@ -122,6 +143,7 @@ def probe_http_service(ip: str, port: int, service_name: str | None = None) -> l
                 server_header=server_header,
                 redirect_target=redirect_target,
                 tls_names=tls_names,
+                favicon_url=favicon_url,
             )
         )
         for name in tls_names:
@@ -159,20 +181,7 @@ def probe_caddy_domain(hostname: str, scheme: str = "https") -> tuple[str | None
 
         html = response.text
         title = extract_title(html)
-
-        # Search for favicon in link tags
-        favicon_url: str | None = None
-        match = FAVICON_RE.search(html) or FAVICON_RE_ALT.search(html)
-        if match:
-            href = match.group(1)
-            if href.startswith("http://") or href.startswith("https://"):
-                favicon_url = href
-            elif href.startswith("//"):
-                favicon_url = f"{scheme}:{href}"
-            elif href.startswith("/"):
-                favicon_url = f"{url}{href}"
-            else:
-                favicon_url = f"{url}/{href}"
+        favicon_url = extract_favicon(html, str(response.url))
 
         # Fall back to /favicon.ico if no link tag found
         if not favicon_url:
