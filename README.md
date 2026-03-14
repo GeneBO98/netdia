@@ -5,6 +5,8 @@ Local-first homelab network discovery and diagramming. Netdia scans your subnets
 ![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
+![Netdia Screenshot](docs/screenshot.png)
+
 ## Features
 
 - **Subnet scanning** — Discovers active hosts and open TCP ports via nmap (`--top-ports 1000`, parallel per-host scans)
